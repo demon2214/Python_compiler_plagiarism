@@ -34,21 +34,24 @@ A web-based application that helps detect code plagiarism by comparing uploaded 
 
 ## 📁 Folder Structure
 
+```
 code_similarity_checker/
-├── app.py # Main application entry point
-├── database.py # Handles DB operations
-├── models.py # Database models
-├── similarity_checker.py # Core similarity logic
+├── app.py                  # Main application entry point
+├── database.py             # Handles DB operations
+├── models.py               # Database models
+├── similarity_checker.py   # Core similarity logic
 ├── static/
-│ ├── css/style.css # Stylesheet
-│ └── js/script.js # JavaScript code
+│   ├── css/style.css       # Stylesheet
+│   └── js/script.js        # JavaScript code
 ├── templates/
-│ ├── login.html # Login page
-│ ├── student.html # Student dashboard
-│ ├── admin.html # Admin dashboard
-│ └── results.html # Similarity results
-├── requirements.txt # Python dependencies
-└── readme.md # Project documentation
+│   ├── login.html          # Login page
+│   ├── student.html        # Student dashboard
+│   ├── admin.html          # Admin dashboard
+│   └── results.html        # Similarity results
+├── requirements.txt        # Python dependencies
+└── readme.md               # Project documentation
+```
+
 
 ---
 
