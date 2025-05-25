@@ -15,34 +15,48 @@
         
         <div class="timer" id="timer">Time remaining: 30:00</div>
         
-        <div class="question">
-            <h2 id="question-title">{{ question.title }}</h2>
-            <p id="question-text">{{ question.description }}</p>
+        <div class="content-wrapper">
+            <div class="main-content">
+                <div class="question">
+                    <h2 id="question-title">{{ question.title }}</h2>
+                    <p id="question-text">{{ question.description }}</p>
+                    
+                    <div class="test-cases">
+                        <h3>Sample Test Cases:</h3>
+                        <ul>
+                            {% for case in question.test_cases %}
+                            <li>Input: {{ case.input }} → Output: {{ case.output }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="editor">
+                    <textarea id="code-editor" rows="20" cols="80">{{ question.starter_code }}</textarea>
+                </div>
+                
+                <div class="buttons">
+                    <button id="run-btn">Run Code</button>
+                    <button id="submit-btn">Submit</button>
+                </div>
+                
+                <div class="output">
+                    <h3>Output</h3>
+                    <div id="output-area"></div>
+                </div>
+            </div>
             
-            <div class="test-cases">
-                <h3>Sample Test Cases:</h3>
-                <ul>
-                    {% for case in question.test_cases %}
-                    <li>Input: {{ case.input }} → Output: {{ case.output }}</li>
+            <div class="questions-sidebar">
+                <h3>Questions</h3>
+                <ul id="questions-list">
+                    {% for q in questions.values() %}
+                    <li class="question-item {% if q.id == question.id %}active{% endif %}" 
+                        data-id="{{ q.id }}">
+                        {{ q.title }}
+                    </li>
                     {% endfor %}
                 </ul>
             </div>
-        </div>
-        
-        <div class="editor">
-            <textarea id="code-editor" rows="20" cols="80">def solution(n):
-    # Your code here
-    pass</textarea>
-        </div>
-        
-        <div class="buttons">
-            <button id="run-btn">Run Code</button>
-            <button id="submit-btn">Submit</button>
-        </div>
-        
-        <div class="output">
-            <h3>Output</h3>
-            <div id="output-area"></div>
         </div>
     </div>
 
