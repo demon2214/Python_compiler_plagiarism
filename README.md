@@ -1,38 +1,75 @@
-# Code Similarity Checker
+# 🔍 Code Similarity Checker
 
-A web-based application that allows users (students and admins) to check the similarity of code files to detect possible plagiarism using Python.
+A web-based application that helps detect code plagiarism by comparing uploaded code files for similarity. It provides interfaces for both **students** and **administrators** to manage submissions and view similarity results.
 
-## Features
+---
 
-- **User Login System:** Students and Admins can log in via a dedicated interface.
-- **Code Upload:** Students can upload code for similarity checking.
-- **Similarity Detection:** Detects code similarity using custom algorithms.
-- **Admin Panel:** Admin can view all uploaded submissions and their similarity reports.
-- **Responsive UI:** Built using HTML, CSS, and JavaScript.
+## ✨ Features
 
-## Tech Stack
+- 🔐 **User Authentication**  
+  Secure login for students and administrators.
 
-- **Backend:** Python, Flask
-- **Frontend:** HTML, CSS, JavaScript
-- **Database:** SQLite (via `database.py`)
-- **Code Processing:** Custom similarity algorithms (`similarity_checker.py`)
+- 📤 **Code Uploading**  
+  Students can upload their code for similarity analysis.
 
-## Folder Structure
+- 🧠 **Similarity Detection**  
+  Compares uploaded code files using custom-built algorithms.
+
+- 🛠️ **Admin Dashboard**  
+  View all submissions, manage users, and check similarity reports.
+
+- 🎨 **Responsive Interface**  
+  Built using HTML, CSS, and JavaScript for a clean user experience.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Backend:** Python, Flask , XAMPP
+- **Frontend:** HTML, CSS, JavaScript  
+- **Database:** SQLite  
+- **Similarity Engine:** Custom logic in `similarity_checker.py`
+
+---
+
+## 📁 Folder Structure
 
 code_similarity_checker/
-├── app.py # Main application entry
-├── database.py # Handles database operations
-├── models.py # Defines database models
-├── similarity_checker.py # Contains similarity comparison logic
+├── app.py # Main application entry point
+├── database.py # Handles DB operations
+├── models.py # Database models
+├── similarity_checker.py # Core similarity logic
 ├── static/
 │ ├── css/style.css # Stylesheet
-│ └── js/script.js # JavaScript
+│ └── js/script.js # JavaScript code
 ├── templates/
-│ ├── login.html
-│ ├── student.html
-│ ├── admin.html
-│ └── results.html
+│ ├── login.html # Login page
+│ ├── student.html # Student dashboard
+│ ├── admin.html # Admin dashboard
+│ └── results.html # Similarity results
 ├── requirements.txt # Python dependencies
-└── readme.md # Project README
+└── readme.md # Project documentation
 
-###____END_____##
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/3genei/code_similarity_checker.git
+cd code_similarity_checker
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the Application
+
+```bash
+python app.py
+```
+
+
