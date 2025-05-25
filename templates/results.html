@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Similarity Results - {{ question.title }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Similarity Results: {{ question.title }}</h1>
+            <div class="user-info">
+                <a href="/admin">Back to Dashboard</a> | 
+                <a href="/logout">Logout</a>
+            </div>
+        </header>
+        
+        {% if not groups %}
+        <div class="alert alert-info">
+            No similar submissions found for this question.
+        </div>
+        {% endif %}
+        
+        {% for group in groups %}
+        <div class="similarity-group">
+            <h2>Group #{{ loop.index }} (Avg Similarity: {{ "%.2f"|format(group.avg_similarity * 100) }}%)</h2>
+            
+            {% for submission in group.submissions %}
+            <div class="submission">
+                <h3>Submission by {{ submission.username }} at {{ submission.submitted_at }}</h3>
+                <pre><code>{{ submission.code }}</code></pre>
+                <div class="output">
+                    <strong>Output:</strong> {{ submission.output }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
