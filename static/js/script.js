@@ -1,7 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Timer functionality (30 minutes)
-    let timeLeft = 30 * 60; // 30 minutes in seconds
+    // Timer functionality (5 minutes)
+    let timeLeft = 5 * 60; // 5 minutes in seconds
     const timerElement = document.getElementById('timer');
+    const editor = document.getElementById('code-editor');
+    const outputArea = document.getElementById('output-area');
+    const runBtn = document.getElementById('run-btn');
+    const submitBtn = document.getElementById('submit-btn');
     
     const updateTimer = () => {
         const minutes = Math.floor(timeLeft / 60);
@@ -18,14 +22,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const timer = setInterval(updateTimer, 1000);
     updateTimer(); // Initial call
     
-    // Run code button
-    const runBtn = document.getElementById('run-btn');
-    const submitBtn = document.getElementById('submit-btn');
-    const editor = document.getElementById('code-editor');
-    const outputArea = document.getElementById('output-area');
+    // Question selection
+    const questionItems = document.querySelectorAll('.question-item');
+    questionItems.forEach(item => {
+        item.addEventListener('click', function() {
+            const questionId = this.getAttribute('data-id');
+            window.location.href = `/?question_id=${questionId}`;
+        });
+    });
     
+    // Run code button
     runBtn.addEventListener('click', async () => {
         const code = editor.value;
+        const questionId = new URLSearchParams(window.location.search).get('question_id') || 1;
         
         try {
             const response = await fetch('/run', {
@@ -33,7 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ code })
+                body: JSON.stringify({ 
+                    code,
+                    question_id: questionId
+                })
             });
             
             const result = await response.json();
@@ -84,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     async function submitCode() {
         const code = editor.value;
+        const questionId = new URLSearchParams(window.location.search).get('question_id') || 1;
         
         try {
             const response = await fetch('/submit', {
@@ -93,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ 
                     code,
-                    question_id: 1  // Default to question 1 for this demo
+                    question_id: questionId
                 })
             });
             
