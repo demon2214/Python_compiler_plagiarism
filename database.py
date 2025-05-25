@@ -1,92 +1,130 @@
-from flask import Flask
 from flask_mysqldb import MySQL
-import os
+from config import Config
+import logging
 
-app = Flask(__name__)
+mysql = MySQL()
 
-# Configure MySQL
-app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = 'code_similarity_db'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
-
-mysql = MySQL(app)
+def init_app(app):
+    """Initialize database with app"""
+    app.config.from_object(Config)
+    mysql.init_app(app)
+    
+    with app.app_context():
+        init_db()
+        create_default_data()
 
 def init_db():
     """Initialize database tables"""
     try:
-        with app.app_context():
-            cur = mysql.connection.cursor()
-            
-            # Create users table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    password VARCHAR(100) NOT NULL,
-                    is_admin BOOLEAN DEFAULT FALSE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Create questions table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS questions (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    title VARCHAR(100) NOT NULL,
-                    description TEXT NOT NULL,
-                    test_cases TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            
-            # Create submissions table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS submissions (
-                    id VARCHAR(36) PRIMARY KEY,
-                    user_id INT NOT NULL,
-                    question_id INT NOT NULL,
-                    code TEXT NOT NULL,
-                    output TEXT,
-                    similarity_checked BOOLEAN DEFAULT FALSE,
-                    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id),
-                    FOREIGN KEY (question_id) REFERENCES questions(id)
-                )
-            """)
-            
-            # Create similarity_groups table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS similarity_groups (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    question_id INT NOT NULL,
-                    avg_similarity FLOAT NOT NULL,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (question_id) REFERENCES questions(id)
-                )
-            """)
-            
-            # Create group_members table
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS group_members (
-                    group_id INT NOT NULL,
-                    submission_id VARCHAR(36) NOT NULL,
-                    FOREIGN KEY (group_id) REFERENCES similarity_groups(id),
-                    FOREIGN KEY (submission_id) REFERENCES submissions(id),
-                    PRIMARY KEY (group_id, submission_id)
-                )
-            """)
-            
-            mysql.connection.commit()
-            print("Database tables created successfully")
-            
+        conn = mysql.connection
+        cur = conn.cursor()
+        
+        # Enable foreign key constraints
+        cur.execute("SET FOREIGN_KEY_CHECKS = 0")
+        
+        # Create tables
+        tables = [
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(100) NOT NULL,
+                is_admin BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS questions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(100) NOT NULL,
+                description TEXT NOT NULL,
+                test_cases JSON,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS submissions (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id INT NOT NULL,
+                question_id INT NOT NULL,
+                code LONGTEXT NOT NULL,
+                output LONGTEXT,
+                similarity_checked BOOLEAN DEFAULT FALSE,
+                similarity_score FLOAT DEFAULT NULL,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS similarity_groups (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                question_id INT NOT NULL,
+                avg_similarity FLOAT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS group_members (
+                group_id INT NOT NULL,
+                submission_id VARCHAR(36) NOT NULL,
+                similarity_score FLOAT NOT NULL,
+                FOREIGN KEY (group_id) REFERENCES similarity_groups(id) ON DELETE CASCADE,
+                FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE CASCADE,
+                PRIMARY KEY (group_id, submission_id)
+            )
+            """
+        ]
+        
+        for table in tables:
+            cur.execute(table)
+        
+        # Re-enable foreign key constraints
+        cur.execute("SET FOREIGN_KEY_CHECKS = 1")
+        conn.commit()
+        logging.info("Database tables initialized successfully")
+        
     except Exception as e:
-        print(f"Error initializing database: {str(e)}")
+        conn.rollback()
+        logging.error(f"Database initialization failed: {str(e)}")
+        raise
 
-def get_db_connection():
-    """Get MySQL database connection"""
-    return mysql.connection
-
-# Initialize the database when this module is imported
-init_db()
+def create_default_data():
+    """Create default admin user and sample questions"""
+    try:
+        conn = mysql.connection
+        cur = conn.cursor()
+        
+        # Add default users
+        cur.execute("""
+            INSERT IGNORE INTO users (username, password, is_admin)
+            VALUES (%s, %s, %s)
+        """, ('admin', 'admin123', True))
+        
+        cur.execute("""
+            INSERT IGNORE INTO users (username, password, is_admin)
+            VALUES (%s, %s, %s)
+        """, ('student', 'student123', False))
+        
+        # Add sample questions if none exist
+        cur.execute("SELECT COUNT(*) as count FROM questions")
+        if cur.fetchone()['count'] == 0:
+            sample_questions = [
+                (1, 'Factorial Calculation', 'Write a function to calculate the factorial of a number.',
+                 '{"test_cases": [{"input": "5", "output": "120"}, {"input": "0", "output": "1"}]}'),
+                (2, 'Fibonacci Sequence', 'Write a function to generate the nth Fibonacci number.',
+                 '{"test_cases": [{"input": "5", "output": "5"}, {"input": "8", "output": "21"}]}')
+            ]
+            cur.executemany("""
+                INSERT INTO questions (id, title, description, test_cases)
+                VALUES (%s, %s, %s, %s)
+            """, sample_questions)
+        
+        conn.commit()
+        logging.info("Default data created successfully")
+        
+    except Exception as e:
+        conn.rollback()
+        logging.error(f"Failed to create default data: {str(e)}")
+        raise
