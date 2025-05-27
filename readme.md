@@ -4,22 +4,67 @@ A modular full-stack platform with Python Flask backend and modern Next.js front
 📦 Project Structure
 
 flask_modular_app/
-├── app.py                       # Flask backend entry
-├── plagiarism_detector.py       # Core similarity logic
-├── code_executor.py             # Code execution engine
-├── auth.py, admin.py, student.py# Role-specific modules
-├── models.py                    # SQLAlchemy models
-├── app/                         # Next.js frontend app
+├── app/
+│   ├── globals.css
 │   ├── layout.tsx
 │   ├── page.tsx
+│
+├── components/
+│   ├── ui/
+│   └── theme-provider.tsx
+│
+├── hooks/
+│   ├── use-mobile.tsx
+│   └── use-toast.ts
+│
+├── lib/
+│   └── utils.ts
+│
+├── public/
+│   ├── placeholder-logo.png
+│   ├── placeholder-logo.svg
+│   ├── placeholder-user.jpg
+│   ├── placeholder.jpg
+│   └── placeholder.svg
+│
+├── static/
+│   ├── css/
+│   └── js/
+│
+├── styles/
 │   └── globals.css
-├── components/                  # UI Components
-│   └── ui/                      # Reusable Tailwind components
-├── requirements.txt             # Flask dependencies
-├── package.json / pnpm-lock.yaml# Frontend dependencies
-├── tailwind.config.ts / postcss.config.mjs
-└── setup_instructions.md        # Local setup help
-
+│
+├── templates/
+│   ├── admin_dashboard.html
+│   ├── base.html
+│   ├── compare_codes.html
+│   ├── error.html
+│   ├── login.html
+│   ├── manage_questions.html
+│   ├── manage_users.html
+│   ├── my_submissions.html
+│   ├── plagiarism_check.html
+│   ├── question_detail.html
+│   └── student_dashboard.html
+│
+├── .gitignore
+├── admin.py
+├── app.py
+├── auth.py
+├── code_executor.py
+├── components.json
+├── models.py
+├── next.config.mjs
+├── package.json
+├── plagiarism_detector.py
+├── plagiarism.py
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── requirements.txt
+├── setup_instructions.md
+├── student.py
+├── tailwind.config.ts
+└── tsconfig.json
 
 
 
