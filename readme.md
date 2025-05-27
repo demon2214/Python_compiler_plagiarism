@@ -3,6 +3,7 @@ A modular full-stack platform with Python Flask backend and modern Next.js front
 
 📦 Project Structure
 
+<details> <summary>Click to expand</summary>
 flask_modular_app/
 ├── app/
 │   ├── globals.css
@@ -65,6 +66,7 @@ flask_modular_app/
 ├── student.py
 ├── tailwind.config.ts
 └── tsconfig.json
+</details>
 
 
 
