@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Questions - Coding Test Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-question-circle"></i> Question Management</h2>
+        <p class="text-muted">Add, edit, and manage coding questions for students.</p>
+    </div>
+</div>
+
+<!-- Add Question Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Add New Question</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin.add_question') }}" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Question Title</label>
+                                <input type="text" class="form-control" id="title" name="title" required>
+                                <div class="invalid-feedback">Please provide a question title.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="difficulty" class="form-label">Difficulty Level</label>
+                                <select class="form-select" id="difficulty" name="difficulty" required>
+                                    <option value="">Select Difficulty</option>
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a difficulty level.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Problem Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required 
+                                  placeholder="Describe the problem clearly with examples..."></textarea>
+                        <div class="invalid-feedback">Please provide a problem description.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="test_cases" class="form-label">Expected Solution / Test Cases</label>
+                        <textarea class="form-control code-editor" id="test_cases" name="test_cases" rows="6" required 
+                                  placeholder="# Example solution or test cases&#10;def solution():&#10;    return 'Hello, World!'"></textarea>
+                        <div class="invalid-feedback">Please provide test cases or expected solution.</div>
+                        <small class="form-text text-muted">Provide example solution or test cases that students can reference.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Question
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="search-input" placeholder="Search questions...">
+        </div>
+    </div>
+    <div class="col-md-4">
+        <select class="form-select" id="difficulty-filter">
+            <option value="">All Difficulties</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+        </select>
+    </div>
+</div>
+
+<!-- Questions Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> All Questions ({{ questions|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if questions %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Difficulty</th>
+                                <th>Description</th>
+                                <th>Created At</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for question in questions %}
+                            <tr class="searchable-row question-row" data-difficulty="{{ question.difficulty }}">
+                                <td>{{ question.id }}</td>
+                                <td><strong>{{ question.title }}</strong></td>
+                                <td>
+                                    <span class="badge difficulty-{{ question.difficulty.lower() }}">
+                                        {{ question.difficulty }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="description-preview">
+                                        {{ question.description[:100] }}{% if question.description|length > 100 %}...{% endif %}
+                                    </div>
+                                </td>
+                                <td>{{ question.created_at }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewQuestion({{ question.id }}, '{{ question.title }}', '{{ question.description }}', '{{ question.test_cases }}')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editQuestion({{ question.id }}, '{{ question.title }}', '{{ question.description }}', '{{ question.difficulty }}', '{{ question.test_cases }}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <a href="{{ url_for('admin.delete_question', question_id=question.id) }}" 
+                                       class="btn btn-sm btn-outline-danger btn-delete"
+                                       onclick="return confirm('Are you sure you want to delete question: {{ question.title }}?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No questions found. Add your first question above!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Question Statistics -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Question Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ questions|selectattr('difficulty', 'equalto', 'Easy')|list|length }}</h4>
+                        <small class="text-muted">Easy Questions</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ questions|selectattr('difficulty', 'equalto', 'Medium')|list|length }}</h4>
+                        <small class="text-muted">Medium Questions</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-danger">{{ questions|selectattr('difficulty', 'equalto', 'Hard')|list|length }}</h4>
+                        <small class="text-muted">Hard Questions</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ questions|length }}</h4>
+                        <small class="text-muted">Total Questions</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Question Modal -->
+<div class="modal fade" id="viewQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Question Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Title:</h6>
+                <p id="viewTitle"></p>
+                
+                <h6>Description:</h6>
+                <p id="viewDescription"></p>
+                
+                <h6>Test Cases / Expected Solution:</h6>
+                <pre><code id="viewTestCases" class="language-python"></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Question Modal -->
+<div class="modal fade" id="editQuestionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editQuestionForm">
+                    <div class="mb-3">
+                        <label for="editTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="editTitle">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDifficulty" class="form-label">Difficulty</label>
+                        <select class="form-select" id="editDifficulty">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="editDescription" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTestCases" class="form-label">Test Cases</label>
+                        <textarea class="form-control code-editor" id="editTestCases" rows="6"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveQuestionChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Filter questions by difficulty
+document.getElementById('difficulty-filter').addEventListener('change', function() {
+    const selectedDifficulty = this.value;
+    const rows = document.querySelectorAll('.question-row');
+    
+    rows.forEach(row => {
+        if (selectedDifficulty === '' || row.dataset.difficulty === selectedDifficulty) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Search functionality
+document.getElementById('search-input').addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    const rows = document.querySelectorAll('.question-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// View question details
+function viewQuestion(id, title, description, testCases) {
+    document.getElementById('viewTitle').textContent = title;
+    document.getElementById('viewDescription').textContent = description;
+    document.getElementById('viewTestCases').textContent = testCases;
+    
+    const modal = new bootstrap.Modal(document.getElementById('viewQuestionModal'));
+    modal.show();
+    
+    // Re-highlight code
+    Prism.highlightAll();
+}
+
+// Edit question
+function editQuestion(id, title, description, difficulty, testCases) {
+    document.getElementById('editTitle').value = title;
+    document.getElementById('editDescription').value = description;
+    document.getElementById('editDifficulty').value = difficulty;
+    document.getElementById('editTestCases').value = testCases;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editQuestionModal'));
+    modal.show();
+}
+
+function saveQuestionChanges() {
+    // In a real implementation, this would send an AJAX request to update the question
+    alert('Question update functionality would be implemented here');
+    bootstrap.Modal.getInstance(document.getElementById('editQuestionModal')).hide();
+}
+
+// Question templates
+const questionTemplates = {
+    'Hello World': {
+        description: 'Write a program that prints "Hello, World!" to the console.',
+        testCases: 'print("Hello, World!")'
+    },
+    'Sum Function': {
+        description: 'Write a function that takes two numbers as parameters and returns their sum.',
+        testCases: 'def add(a, b):\n    return a + b\n\n# Test\nprint(add(2, 3))  # Should output: 5'
+    },
+    'Fibonacci': {
+        description: 'Write a function to generate the nth Fibonacci number.',
+        testCases: 'def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\n# Test\nprint(fibonacci(5))  # Should output: 5'
+    }
+};
+
+// Add template selector
+function addTemplateSelector() {
+    const titleInput = document.getElementById('title');
+    titleInput.addEventListener('change', function() {
+        const template = questionTemplates[this.value];
+        if (template) {
+            if (confirm('Use template for "' + this.value + '"?')) {
+                document.getElementById('description').value = template.description;
+                document.getElementById('test_cases').value = template.testCases;
+            }
+        }
+    });
+}
+
+// Initialize template selector when page loads
+document.addEventListener('DOMContentLoaded', addTemplateSelector);
+</script>
+{% endblock %}

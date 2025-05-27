@@ -1,0 +1,572 @@
+{% extends "base.html" %}
+
+{% block title %}{{ question.title }} - Coding Test Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+.test-case {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 5px 0;
+}
+
+.test-case.passed {
+    border-color: #28a745;
+    background-color: #d4edda;
+}
+
+.test-case.failed {
+    border-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.test-case.pending {
+    border-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+.exam-warning {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #dc3545;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    z-index: 9999;
+    display: none;
+}
+
+.camera-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #28a745;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+.violation-counter {
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    background: #ffc107;
+    color: black;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+#video-preview {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: 150px;
+    height: 100px;
+    border: 2px solid #28a745;
+    border-radius: 5px;
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Exam Warning Banner -->
+<div id="exam-warning" class="exam-warning">
+    <strong>⚠️ EXAM MODE VIOLATION DETECTED ⚠️</strong>
+    <span id="warning-message"></span>
+</div>
+
+<!-- Camera Indicator -->
+<div class="camera-indicator">
+    <i class="fas fa-video"></i> Camera Active
+</div>
+
+<!-- Violation Counter -->
+<div class="violation-counter">
+    Tab Switches: <span id="tab-switch-count">0</span> | 
+    Fullscreen Exits: <span id="fullscreen-exit-count">0</span>
+</div>
+
+<!-- Camera Preview -->
+<video id="video-preview" autoplay muted></video>
+
+<div class="row">
+    <!-- Question Details -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-question-circle"></i> {{ question.title }}</h5>
+                <span class="badge difficulty-{{ question.difficulty.lower() }}">
+                    {{ question.difficulty }}
+                </span>
+            </div>
+            <div class="card-body">
+                <h6>Problem Description:</h6>
+                <div class="problem-description mb-4">
+                    {{ question.description|replace('\n', '<br>')|safe }}
+                </div>
+                
+                <h6>Function Requirements:</h6>
+                <div class="alert alert-info">
+                    <strong>Function Name:</strong> <code>{{ question.function_name }}</code><br>
+                    <strong>Test Cases:</strong> {{ question.test_cases|length }} test cases will be run
+                </div>
+                
+                <h6>Example Code:</h6>
+                <div class="example-section mb-4">
+                    <pre><code class="language-python">{{ question.example_code }}</code></pre>
+                </div>
+                
+                <h6>Test Cases Preview:</h6>
+                <div class="test-cases-preview">
+                    {% for test_case in question.test_cases[:3] %}
+                    <div class="test-case pending">
+                        <strong>{{ test_case.description }}:</strong><br>
+                        <small>Input: {{ test_case.input }}</small><br>
+                        <small>Expected: {{ test_case.expected }}</small>
+                    </div>
+                    {% endfor %}
+                    {% if question.test_cases|length > 3 %}
+                    <small class="text-muted">... and {{ question.test_cases|length - 3 }} more test cases</small>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Exam Rules:</h6>
+                    <ul class="list-unstyled text-danger">
+                        <li><i class="fas fa-exclamation-triangle"></i> Must stay in fullscreen mode</li>
+                        <li><i class="fas fa-exclamation-triangle"></i> No tab switching allowed</li>
+                        <li><i class="fas fa-exclamation-triangle"></i> Camera must remain active</li>
+                        <li><i class="fas fa-exclamation-triangle"></i> Violations are logged</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Code Editor -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5><i class="fas fa-code"></i> Code Editor</h5>
+            </div>
+            <div class="card-body">
+                <!-- Code Editor Textarea -->
+                <div class="mb-3">
+                    <textarea id="code-editor" class="form-control code-editor" rows="12" 
+                              placeholder="# Write your function here&#10;# Function name must be: {{ question.function_name }}&#10;&#10;def {{ question.function_name }}():&#10;    # Your code here&#10;    pass"></textarea>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2 mb-3">
+                    <button id="test-code-btn" class="btn btn-warning">
+                        <i class="fas fa-vial"></i> Run Tests
+                    </button>
+                    <button id="run-code-btn" class="btn btn-success btn-run">
+                        <i class="fas fa-play"></i> Run Code
+                    </button>
+                    <button id="submit-code-btn" class="btn btn-primary btn-submit">
+                        <i class="fas fa-paper-plane"></i> Submit Solution
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearCode()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                
+                <!-- Test Results -->
+                <div id="test-results" class="mb-3" style="display: none;">
+                    <label class="form-label"><strong>Test Results:</strong></label>
+                    <div id="test-results-content" class="border rounded p-3">
+                        <!-- Test results will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Code Output -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Code Output:</strong></label>
+                    <div id="code-output" class="code-output">
+                        Ready to test your code... Click "Run Tests" to validate against test cases.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for submission -->
+<form id="submit-form" method="POST" action="{{ url_for('student.submit_code') }}" style="display: none;">
+    <input type="hidden" name="question_id" value="{{ question.id }}">
+    <input type="hidden" id="code-input" name="code" value="">
+    <input type="hidden" id="test-results-input" name="test_results" value="">
+</form>
+
+<!-- Back Button -->
+<div class="row mt-3">
+    <div class="col-12">
+        <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary" onclick="exitExamMode()">
+            <i class="fas fa-arrow-left"></i> Back to Questions
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Exam monitoring variables
+let tabSwitchCount = 0;
+let fullscreenExitCount = 0;
+let cameraStream = null;
+let isExamMode = true;
+let lastTestResults = null;
+
+// Question data
+const questionId = {{ question.id }};
+const functionName = "{{ question.function_name }}";
+const testCases = {{ question.test_cases|tojson }};
+
+// Initialize exam mode
+document.addEventListener('DOMContentLoaded', function() {
+    initializeExamMode();
+    initializeCamera();
+    setupExamMonitoring();
+});
+
+// Initialize exam mode
+function initializeExamMode() {
+    // Request fullscreen
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.log('Fullscreen request failed:', err);
+            showWarning('Fullscreen mode required for exam');
+        });
+    }
+    
+    // Log exam session start
+    logExamSession();
+}
+
+// Initialize camera
+async function initializeCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 150, height: 100 }, 
+            audio: false 
+        });
+        
+        const video = document.getElementById('video-preview');
+        video.srcObject = stream;
+        cameraStream = stream;
+        
+        console.log('Camera initialized successfully');
+    } catch (err) {
+        console.error('Camera access denied:', err);
+        showWarning('Camera access required for exam mode');
+    }
+}
+
+// Setup exam monitoring
+function setupExamMonitoring() {
+    // Monitor tab visibility
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden && isExamMode) {
+            tabSwitchCount++;
+            document.getElementById('tab-switch-count').textContent = tabSwitchCount;
+            logViolation('tab_switch');
+            showWarning('Tab switching detected! Stay on this page.');
+        }
+    });
+    
+    // Monitor fullscreen changes
+    document.addEventListener('fullscreenchange', function() {
+        if (!document.fullscreenElement && isExamMode) {
+            fullscreenExitCount++;
+            document.getElementById('fullscreen-exit-count').textContent = fullscreenExitCount;
+            logViolation('fullscreen_exit');
+            showWarning('Fullscreen mode exited! Please return to fullscreen.');
+            
+            // Try to re-enter fullscreen
+            setTimeout(() => {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log('Re-fullscreen failed:', err);
+                    });
+                }
+            }, 1000);
+        }
+    });
+    
+    // Prevent right-click context menu
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        showWarning('Right-click disabled during exam');
+    });
+    
+    // Prevent common keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Prevent Alt+Tab, Ctrl+Tab, F11, etc.
+        if ((e.altKey && e.key === 'Tab') || 
+            (e.ctrlKey && e.key === 'Tab') ||
+            e.key === 'F11' ||
+            (e.ctrlKey && e.shiftKey && e.key === 'I') || // Dev tools
+            (e.ctrlKey && e.shiftKey && e.key === 'J') || // Console
+            (e.key === 'F12')) { // Dev tools
+            e.preventDefault();
+            showWarning('Keyboard shortcut disabled during exam');
+        }
+    });
+    
+    // Monitor window focus
+    window.addEventListener('blur', function() {
+        if (isExamMode) {
+            showWarning('Window lost focus! Please stay focused on the exam.');
+        }
+    });
+}
+
+// Show warning message
+function showWarning(message) {
+    const warningDiv = document.getElementById('exam-warning');
+    const messageSpan = document.getElementById('warning-message');
+    
+    messageSpan.textContent = message;
+    warningDiv.style.display = 'block';
+    
+    setTimeout(() => {
+        warningDiv.style.display = 'none';
+    }, 3000);
+}
+
+// Log exam session
+async function logExamSession() {
+    try {
+        await fetch('/student/log_exam_session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                question_id: questionId,
+                action: 'start'
+            })
+        });
+    } catch (err) {
+        console.error('Failed to log exam session:', err);
+    }
+}
+
+// Log violation
+async function logViolation(violationType) {
+    try {
+        await fetch('/student/log_violation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                question_id: questionId,
+                violation_type: violationType
+            })
+        });
+    } catch (err) {
+        console.error('Failed to log violation:', err);
+    }
+}
+
+// Test code against test cases
+async function testCode() {
+    const codeEditor = document.getElementById('code-editor');
+    const testButton = document.getElementById('test-code-btn');
+    const testResultsDiv = document.getElementById('test-results');
+    const testResultsContent = document.getElementById('test-results-content');
+    
+    const code = codeEditor.value.trim();
+    if (!code) {
+        showOutput('No code to test. Please write your function first.', 'error');
+        return;
+    }
+    
+    // Update UI
+    testButton.disabled = true;
+    testButton.innerHTML = '<span class="loading"></span> Running Tests...';
+    testResultsContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Running test cases...</div>';
+    testResultsDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch('/student/test_code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                code: code,
+                function_name: functionName,
+                test_cases: testCases
+            })
+        });
+        
+        const result = await response.json();
+        lastTestResults = result;
+        
+        displayTestResults(result);
+        
+        if (result.success) {
+            showOutput(`Tests completed: ${result.passed}/${result.total} passed (${result.success_rate.toFixed(1)}%)`, 
+                      result.passed === result.total ? 'success' : 'warning');
+        } else {
+            showOutput(result.message, 'error');
+        }
+        
+    } catch (error) {
+        showOutput(`Error running tests: ${error.message}`, 'error');
+        testResultsContent.innerHTML = '<div class="alert alert-danger">Failed to run tests. Please try again.</div>';
+    } finally {
+        testButton.disabled = false;
+        testButton.innerHTML = '<i class="fas fa-vial"></i> Run Tests';
+    }
+}
+
+// Display test results
+function displayTestResults(result) {
+    const testResultsContent = document.getElementById('test-results-content');
+    
+    if (!result.success) {
+        testResultsContent.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+        return;
+    }
+    
+    let html = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6>Test Results: ${result.passed}/${result.total} passed</h6>
+            <span class="badge ${result.passed === result.total ? 'bg-success' : 'bg-warning'}">
+                ${result.success_rate.toFixed(1)}%
+            </span>
+        </div>
+    `;
+    
+    result.results.forEach(test => {
+        const statusClass = test.passed ? 'passed' : 'failed';
+        const statusIcon = test.passed ? 'fa-check text-success' : 'fa-times text-danger';
+        
+        html += `
+            <div class="test-case ${statusClass}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong><i class="fas ${statusIcon}"></i> ${test.description}</strong>
+                        <br><small>Input: ${JSON.stringify(test.input)}</small>
+                        <br><small>Expected: ${JSON.stringify(test.expected)}</small>
+                        <br><small>Actual: ${JSON.stringify(test.actual)}</small>
+                        ${test.error ? `<br><small class="text-danger">Error: ${test.error}</small>` : ''}
+                    </div>
+                    <small class="text-muted">${test.execution_time}ms</small>
+                </div>
+            </div>
+        `;
+    });
+    
+    testResultsContent.innerHTML = html;
+}
+
+// Submit code with test results
+function submitCode() {
+    const codeEditor = document.getElementById('code-editor');
+    const submitForm = document.getElementById('submit-form');
+    const codeInput = document.getElementById('code-input');
+    const testResultsInput = document.getElementById('test-results-input');
+    
+    const code = codeEditor.value.trim();
+    if (!code) {
+        alert('Please write some code before submitting');
+        return;
+    }
+    
+    if (!lastTestResults) {
+        if (!confirm('You haven\'t run the tests yet. Submit anyway?')) {
+            return;
+        }
+    } else if (lastTestResults.passed < lastTestResults.total) {
+        if (!confirm(`Only ${lastTestResults.passed}/${lastTestResults.total} tests passed. Submit anyway?`)) {
+            return;
+        }
+    }
+    
+    if (confirm('Are you sure you want to submit this code?')) {
+        codeInput.value = code;
+        testResultsInput.value = JSON.stringify(lastTestResults || {});
+        
+        // End exam session
+        exitExamMode();
+        
+        submitForm.submit();
+    }
+}
+
+// Exit exam mode
+function exitExamMode() {
+    isExamMode = false;
+    
+    // Stop camera
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+    }
+    
+    // Exit fullscreen
+    if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => {
+            console.log('Exit fullscreen failed:', err);
+        });
+    }
+    
+    // Log session end
+    logExamSession();
+}
+
+// Clear code
+function clearCode() {
+    if (confirm('Are you sure you want to clear all code?')) {
+        document.getElementById('code-editor').value = '';
+        document.getElementById('test-results').style.display = 'none';
+        lastTestResults = null;
+        showOutput('Code cleared. Ready to start fresh!', 'info');
+    }
+}
+
+// Override global functions
+window.testCode = testCode;
+window.submitCode = submitCode;
+window.clearCode = clearCode;
+window.exitExamMode = exitExamMode;
+
+// Auto-save code
+const codeEditor = document.getElementById('code-editor');
+const storageKey = `exam_code_question_${questionId}`;
+
+// Load saved code
+const savedCode = localStorage.getItem(storageKey);
+if (savedCode) {
+    codeEditor.value = savedCode;
+}
+
+// Save code on change
+codeEditor.addEventListener('input', function() {
+    localStorage.setItem(storageKey, this.value);
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function(e) {
+    if (isExamMode) {
+        e.preventDefault();
+        e.returnValue = 'Are you sure you want to leave the exam?';
+        return 'Are you sure you want to leave the exam?';
+    }
+});
+
+// Prevent page refresh during exam
+window.addEventListener('keydown', function(e) {
+    if (isExamMode && (e.key === 'F5' || (e.ctrlKey && e.key === 'r'))) {
+        e.preventDefault();
+        showWarning('Page refresh disabled during exam');
+    }
+});
+</script>
+{% endblock %}

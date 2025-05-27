@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Code Comparison - Coding Test Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-code-branch"></i> Code Comparison</h2>
+        <p class="text-muted">Detailed comparison between two submissions for: <strong>{{ sub1.question_title }}</strong></p>
+    </div>
+</div>
+
+<!-- Similarity Score -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>Overall Similarity Score</h3>
+                <div class="progress mb-3" style="height: 30px;">
+                    <div class="progress-bar 
+                        {% if similarity >= 70 %}bg-danger
+                        {% elif similarity >= 30 %}bg-warning
+                        {% else %}bg-success{% endif %}" 
+                        style="width: {{ similarity }}%">
+                        <strong>{{ "%.1f"|format(similarity) }}%</strong>
+                    </div>
+                </div>
+                <p class="mb-0">
+                    {% if similarity >= 70 %}
+                        <span class="badge bg-danger fs-6">High Risk - Potential Plagiarism</span>
+                    {% elif similarity >= 30 %}
+                        <span class="badge bg-warning fs-6">Medium Risk - Requires Review</span>
+                    {% else %}
+                        <span class="badge bg-success fs-6">Low Risk - Acceptable Similarity</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Information -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-user"></i> Student A: {{ sub1.username }}</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Submitted:</strong> {{ sub1.submitted_at }}</p>
+                <p><strong>Submission ID:</strong> #{{ sub1.id }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-user"></i> Student B: {{ sub2.username }}</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Submitted:</strong> {{ sub2.submitted_at }}</p>
+                <p><strong>Submission ID:</strong> #{{ sub2.id }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Code Comparison -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-code"></i> Side-by-Side Code Comparison</h5>
+                <small class="text-muted">Lines are color-coded: 
+                    <span class="badge bg-success">Identical</span>
+                    <span class="badge bg-danger">Deleted</span>
+                    <span class="badge bg-primary">Added</span>
+                    <span class="badge bg-warning">Modified</span>
+                </small>
+            </div>
+            <div class="card-body">
+                <div class="code-comparison">
+                    <!-- Student A Code -->
+                    <div class="code-block">
+                        <h6 class="text-primary mb-3">{{ sub1.username }}'s Code</h6>
+                        {% if comparison and comparison.lines1 %}
+                            {% for line in comparison.lines1 %}
+                            <div class="code-line {{ line.type }}">{{ line.line }}</div>
+                            {% endfor %}
+                        {% else %}
+                            <pre><code class="language-python">{{ sub1.code }}</code></pre>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Student B Code -->
+                    <div class="code-block">
+                        <h6 class="text-info mb-3">{{ sub2.username }}'s Code</h6>
+                        {% if comparison and comparison.lines2 %}
+                            {% for line in comparison.lines2 %}
+                            <div class="code-line {{ line.type }}">{{ line.line }}</div>
+                            {% endfor %}
+                        {% else %}
+                            <pre><code class="language-python">{{ sub2.code }}</code></pre>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Details -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Detailed Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Code Metrics</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Lines of Code (A):</td>
+                                <td><strong>{{ sub1.code.split('\n')|length }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Lines of Code (B):</td>
+                                <td><strong>{{ sub2.code.split('\n')|length }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Character Count (A):</td>
+                                <td><strong>{{ sub1.code|length }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Character Count (B):</td>
+                                <td><strong>{{ sub2.code|length }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Similarity Breakdown</h6>
+                        <div class="mb-2">
+                            <small>TF-IDF Similarity (Text-based)</small>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" style="width: {{ (similarity * 0.6)|round }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <small>AST Similarity (Structure-based)</small>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: {{ (similarity * 0.8)|round }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <small>Combined Score</small>
+                            <div class="progress">
+                                <div class="progress-bar 
+                                    {% if similarity >= 70 %}bg-danger
+                                    {% elif similarity >= 30 %}bg-warning
+                                    {% else %}bg-success{% endif %}" 
+                                    style="width: {{ similarity }}%">
+                                    {{ "%.1f"|format(similarity) }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('plagiarism.plagiarism_check') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Plagiarism Check
+                    </a>
+                    <button class="btn btn-primary" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print Report
+                    </button>
+                    <button class="btn btn-success" onclick="exportReport()">
+                        <i class="fas fa-download"></i> Export Report
+                    </button>
+                    {% if similarity >= 70 %}
+                    <button class="btn btn-danger" onclick="flagSubmissions()">
+                        <i class="fas fa-flag"></i> Flag as Plagiarism
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function exportReport() {
+    // Create a simple text report
+    const report = `
+PLAGIARISM ANALYSIS REPORT
+=========================
+
+Question: {{ sub1.question_title }}
+Analysis Date: ${new Date().toLocaleString()}
+
+STUDENTS:
+Student A: {{ sub1.username }} (Submitted: {{ sub1.submitted_at }})
+Student B: {{ sub2.username }} (Submitted: {{ sub2.submitted_at }})
+
+SIMILARITY SCORE: {{ "%.1f"|format(similarity) }}%
+
+RISK LEVEL: {% if similarity >= 70 %}HIGH RISK{% elif similarity >= 30 %}MEDIUM RISK{% else %}LOW RISK{% endif %}
+
+CODE COMPARISON:
+Student A Code:
+{{ sub1.code }}
+
+Student B Code:
+{{ sub2.code }}
+    `;
+    
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `plagiarism_report_${Date.now()}.txt`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function flagSubmissions() {
+    if (confirm('Are you sure you want to flag these submissions as potential plagiarism?')) {
+        alert('Submissions have been flagged for review. (This would trigger admin notifications in a full implementation)');
+    }
+}
+</script>
+{% endblock %}

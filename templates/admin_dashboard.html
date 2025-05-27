@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Coding Test Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_submissions }}</div>
+            <div class="stat-label">Total Submissions</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card success">
+            <div class="stat-number">{{ stats.total_users }}</div>
+            <div class="stat-label">Active Students</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card warning">
+            <div class="stat-number">{{ stats.total_questions }}</div>
+            <div class="stat-label">Questions Available</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card danger">
+            <div class="stat-number">{{ stats.high_similarity }}</div>
+            <div class="stat-label">High Similarity Alerts</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-users"></i> Manage Users
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('admin.manage_questions') }}" class="btn btn-success w-100">
+                            <i class="fas fa-question-circle"></i> Manage Questions
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('plagiarism.plagiarism_check') }}" class="btn btn-warning w-100">
+                            <i class="fas fa-search"></i> Check Plagiarism
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-info w-100" onclick="location.reload()">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Submissions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Recent Submissions</h5>
+            </div>
+            <div class="card-body">
+                {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Question</th>
+                                <th>Submitted At</th>
+                                <th>Similarity Score</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for submission in submissions %}
+                            <tr class="searchable-row">
+                                <td>{{ submission.username }}</td>
+                                <td>{{ submission.question_title }}</td>
+                                <td>{{ submission.submitted_at }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-danger' if submission.similarity_score >= 70 else 'bg-warning' if submission.similarity_score >= 30 else 'bg-success' }}">
+                                        {{ "%.1f"|format(submission.similarity_score) }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if submission.similarity_score >= 70 %}
+                                        <span class="badge bg-danger">High Risk</span>
+                                    {% elif submission.similarity_score >= 30 %}
+                                        <span class="badge bg-warning">Medium Risk</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Low Risk</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewCode({{ submission.id }})">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No submissions yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Code View Modal -->
+<div class="modal fade" id="codeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Submission Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre><code id="modalCode" class="language-python"></code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function viewCode(submissionId) {
+    // This would fetch and display the code in the modal
+    // For now, just show the modal
+    const modal = new bootstrap.Modal(document.getElementById('codeModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

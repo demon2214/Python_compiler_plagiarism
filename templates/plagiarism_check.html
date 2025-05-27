@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Plagiarism Check - Coding Test Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2><i class="fas fa-search"></i> Plagiarism Detection</h2>
+        <p class="text-muted">Analyze code submissions for potential plagiarism using TF-IDF and AST analysis.</p>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-danger">{{ similar_pairs|selectattr('similarity', 'ge', 70)|list|length }}</h3>
+                <p class="text-muted mb-0">High Risk (≥70%)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-warning">{{ similar_pairs|selectattr('similarity', 'ge', 30)|selectattr('similarity', 'lt', 70)|list|length }}</h3>
+                <p class="text-muted mb-0">Medium Risk (30-70%)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="text-primary">{{ similar_pairs|length }}</h3>
+                <p class="text-muted mb-0">Total Flagged</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="search-input" placeholder="Search by student name or question...">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="similarity-filter">
+            <option value="">All Similarities</option>
+            <option value="high">High Risk (≥70%)</option>
+            <option value="medium">Medium Risk (30-70%)</option>
+            <option value="low">Low Risk (&lt;30%)</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-outline-primary w-100" onclick="location.reload()">
+            <i class="fas fa-sync"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- Similar Submissions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-exclamation-triangle"></i> Similar Submissions</h5>
+            </div>
+            <div class="card-body">
+                {% if similar_pairs %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Question</th>
+                                <th>Student 1</th>
+                                <th>Student 2</th>
+                                <th>Similarity</th>
+                                <th>Risk Level</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pair in similar_pairs %}
+                            <tr class="searchable-row similarity-row" 
+                                data-similarity="{{ pair.similarity }}"
+                                data-risk="{{ 'high' if pair.similarity >= 70 else 'medium' if pair.similarity >= 30 else 'low' }}">
+                                <td>{{ pair.question_title }}</td>
+                                <td>
+                                    <strong>{{ pair.submission1.username }}</strong><br>
+                                    <small class="text-muted">{{ pair.submission1.submitted_at }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ pair.submission2.username }}</strong><br>
+                                    <small class="text-muted">{{ pair.submission2.submitted_at }}</small>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar 
+                                            {% if pair.similarity >= 70 %}bg-danger
+                                            {% elif pair.similarity >= 30 %}bg-warning
+                                            {% else %}bg-success{% endif %}" 
+                                            style="width: {{ pair.similarity }}%">
+                                            {{ "%.1f"|format(pair.similarity) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if pair.similarity >= 70 %}
+                                        <span class="badge bg-danger">High Risk</span>
+                                    {% elif pair.similarity >= 30 %}
+                                        <span class="badge bg-warning">Medium Risk</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Low Risk</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('plagiarism.compare_codes', sub1_id=pair.submission1.id, sub2_id=pair.submission2.id) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> Compare
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+                    <h5>No Suspicious Similarities Found</h5>
+                    <p class="text-muted">All submissions appear to be original work.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Similarity Analysis Legend</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-danger me-2">High Risk</span>
+                            <span>≥70% similarity - Requires immediate review</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-warning me-2">Medium Risk</span>
+                            <span>30-70% similarity - May need investigation</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-success me-2">Low Risk</span>
+                            <span>&lt;30% similarity - Acceptable variation</span>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <small class="text-muted">
+                    <strong>Analysis Methods:</strong> TF-IDF (text similarity) + AST (code structure similarity)
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Filter by similarity level
+document.getElementById('similarity-filter').addEventListener('change', function() {
+    const selectedRisk = this.value;
+    const rows = document.querySelectorAll('.similarity-row');
+    
+    rows.forEach(row => {
+        if (selectedRisk === '' || row.dataset.risk === selectedRisk) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Search functionality
+document.getElementById('search-input').addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    const rows = document.querySelectorAll('.similarity-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}
