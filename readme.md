@@ -1,4 +1,5 @@
 🔐 Code Similarity & Plagiarism Detection Platform
+
 A modular full-stack platform with Python Flask backend and modern Next.js frontend to securely detect code plagiarism, execute code, and manage student/admin workflows.
 
 📦 Project Structure
@@ -96,23 +97,26 @@ Layer	Stack
 
 🚀 Setup Guide
 Backend
-
+```
 bash
 # Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
+```
+```
 # Install backend dependencies
 pip install -r requirements.txt
-
+```
+```
 # Run Flask server
 python app.py
 Frontend
-
+```
+```
 bash
 # Using pnpm
 pnpm install
 pnpm dev
-
+```
 
 📘 Refer setup_instructions.md for environment variables and DB setup.
