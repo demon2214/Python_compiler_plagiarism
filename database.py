@@ -90,7 +90,7 @@ def init_db():
         conn.rollback()
         logging.error(f"Database initialization failed: {str(e)}")
         raise
-
+#creates a default data
 def create_default_data():
     """Create default admin user and sample questions"""
     try:
