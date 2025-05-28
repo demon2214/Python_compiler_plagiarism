@@ -1,8 +1,11 @@
-🔐 Code Similarity & Plagiarism Detection Platform
+# 🛡️ Code Integrity & Plagiarism Detection Suite
 
-A modular full-stack platform with Python Flask backend and modern Next.js frontend to securely detect code plagiarism, execute code, and manage student/admin workflows.
+A scalable, full-stack platform built with a secure **Python Flask** backend and a modern **Next.js** frontend. Designed to analyze code similarity, run code in isolation, and streamline workflows for students and administrators.
 
-📦 Project Structure
+---
+
+## 🗂️ Project Structure
+
 ```
 flask_modular_app/
 ├── app/
@@ -68,55 +71,54 @@ flask_modular_app/
 └── tsconfig.json
 ```
 
+---
 
+## ✨ Key Features
 
-✨ Features
+- 🧬 **Smart Code Similarity Analysis** (via TF-IDF & AST parsing)  
+- 🔐 **Role-Based Access** for Admins and Students  
+- 📈 **Interactive Dashboards** for Submissions & Reports  
+- 🧪 **Secure Code Execution** within Sandboxed Environments  
+- 🎨 **Composable UI** built with Tailwind CSS & ShadCN  
+- 🧭 **Modern Routing** using Next.js 14 App Directory  
 
-  🧠 AI-based Code Similarity Detection (TF-IDF + AST)
+---
 
-  🔐 Admin & Student Login Flows
+## 🧰 Tech Stack
 
-  📊 Visual Results Dashboard
+| Layer         | Stack                                      |
+|---------------|---------------------------------------------|
+| 🖼️ Frontend    | Next.js 14, Tailwind CSS, TypeScript        |
+| 🔧 Backend     | Flask, Python, SQLAlchemy                   |
+| 🗄️ Database    | SQLite / MySQL (configurable)               |
+| 🛠️ Tools       | PNPM, ShadCN UI, Chart.js                   |
 
-  🖥️ Code Execution in Sandboxed Environment
+---
 
-  🎨 Modular UI with Tailwind CSS + ShadCN UI
+## 🚀 Quickstart Guide
 
-  ⚙️ Next.js 14 App Directory Routing
-
-
-⚙️ Technologies Used
-
-Layer	Stack
-  🎯 Frontend	Next.js 14, Tailwind CSS, TypeScript
-  🧠  Backend	Flask, Python, SQLAlchemy
-  💽 Database	SQLite / MySQL (configurable)
-  📦 Tools	PNPM, ShadCN UI, Chart.js
-
-
-
-🚀 Setup Guide
-Backend
-```
-bash
+### Backend Setup
+```bash
 # Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # For Windows: venv\Scripts\activate
 ```
-```
-# Install backend dependencies
+
+```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
-```
-# Run Flask server
+
+```bash
+# Start the Flask server
 python app.py
-Frontend
 ```
-```
-bash
-# Using pnpm
+
+### Frontend Setup
+```bash
+# Using PNPM
 pnpm install
 pnpm dev
 ```
 
-📘 Refer setup_instructions.md for environment variables and DB setup.
+📘 *Refer to `setup_instructions.md` for environment configs and database initialization.*
