@@ -121,4 +121,4 @@ pnpm install
 pnpm dev
 ```
 
-📘 *Refer to `setup_instructions.md` for environment configs and database initialization.*
+📘 *Refer to `setup_instructions.md` for environment configs and database initialization..*
